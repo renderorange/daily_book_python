@@ -56,6 +56,67 @@ def parse(book):
     return header, body, footer
 
 
+def process(header, body):
+    title_regex = re.compile('^Title:\\s+(.+)')
+    author_regex = re.compile('^Author:\\s+(.+)')
+    title = None
+    author = None
+
+    for line in header:
+        if 'The New McGuffey' in line:
+            return None, 'book is The New McGuffey Reader'
+
+        if 'Language:' in line and 'English' not in line:
+            return None, "book isn't in English"
+
+        if 'Title:' in line:
+            match = title_regex.search(line)
+            title = match.group(1)
+            if args.debug:
+                logger('debug', 'title: ' + title)
+
+        if 'Author:' in line:
+            match = author_regex.search(line)
+            author = match.group(1)
+            if args.debug:
+                logger('debug', 'author: ' + author)
+
+    if title is None:
+        return None, 'title was not found'
+
+    if author is None:
+        return None, 'author was not found'
+
+    build_variable = ''
+    paragraphs = []
+
+    for line in body:
+        if len(line) > 0:
+            build_variable = '{}{} '.format(build_variable, line)
+        else:
+            paragraphs.append(build_variable)
+            build_variable = ''
+
+    if args.debug:
+        logger('debug', 'paragraphs found: ' + str(len(paragraphs)))
+
+    quote_regex = re.compile('^["].+["]\\s*$')
+    quotes = []
+
+    for paragraph in paragraphs:
+        match = quote_regex.search(paragraph)
+        if match is not None:
+            if len(paragraph) > 90 and len(paragraph) < 113:
+                quotes.append(paragraph)
+                if args.debug:
+                    logger('debug', 'quote was found: ' + paragraph)
+
+    if len(quotes) == 0:
+        return None, 'quote was not found'
+
+    return quotes, None
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -81,7 +142,9 @@ def main():
         logger('error', s)
         sys.exit(1)
 
+    book_number_regex = re.compile('^(\\d+)')
     download_error_count = 0
+
     while True:
         book_number = None
         book_name = None
@@ -100,8 +163,8 @@ def main():
         else:
             random.seed(a=time.time())
             book_name = catalog[random.randint(0, len(catalog) - 1)]
-            matches = re.match('^(\\d+)', book_name)
-            book_number = str(matches[0])
+            match = book_number_regex.search(book_name)
+            book_number = str(match.group(1))
 
         page_link = 'https://gutenberg.org/ebooks/' + book_number
         book_link = 'https://aleph.pglaf.org'
@@ -139,8 +202,7 @@ def main():
         book = response.text.splitlines()
 
         header, body, footer = parse(book)
-
-        # quotes, error = process( header, body )
+        quotes, error = process(header, body)
 
         break
 
