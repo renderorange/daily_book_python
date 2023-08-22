@@ -204,6 +204,23 @@ def main():
         header, body, footer = parse(book)
         quotes, error = process(header, body)
 
+        if error is not None:
+            logger('error', error + ' - ' + book_number)
+            if args.book:
+                sys.exit(1)
+            else:
+                continue
+
+        quote = ''
+
+        if len(quotes) > 1:
+            random.seed(a=time.time())
+            quote = quotes[random.randint(0, len(quotes) - 1)]
+        else:
+            quote = quotes[len(quotes) - 1]
+
+        print('{} {}'.format(quote, page_link))
+
         break
 
 
