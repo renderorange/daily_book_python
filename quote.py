@@ -46,6 +46,11 @@ def parse(book):
         # correct double spacing
         line = re.sub(' +', ' ', line)
 
+        # replace smart quotes
+        line = re.sub('“', '"', line)
+        line = re.sub('”', '"', line)
+        line = re.sub('’', "'", line)
+
         if mark_head == 1:
             header.append(line)
         elif mark_body == 1:
@@ -135,7 +140,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        with open(os.path.dirname(__file__) + '/catalog.txt', encoding='utf-8') as catalog_fh:
+        with open(os.path.dirname(__file__) + '/catalog.txt') as catalog_fh:
             catalog = catalog_fh.read().splitlines()
     except Exception as e:
         s = str(e)
@@ -182,6 +187,7 @@ def main():
             logger('debug', 'book link: ' + book_link)
 
         response = requests.get(book_link)
+        response.encoding = 'utf-8'
 
         if response.status_code != 200:
             download_error_count = download_error_count + 1
