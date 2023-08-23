@@ -147,25 +147,25 @@ def main():
         logger('error', s)
         sys.exit(1)
 
+    book_number = None
+    book_name = None
+
+    if args.book:
+        book_number = str(args.book)
+        for line in catalog:
+            if line == book_number + '.txt' or line == book_number + '-0.txt':
+                book_name = line
+                break
+
+        if book_name is None:
+            logger('error', 'book not found - ' + book_number)
+            sys.exit(1)
+
     book_number_regex = re.compile('^(\\d+)')
     download_error_count = 0
 
     while True:
-        book_number = None
-        book_name = None
-
-        if args.book:
-            book_number = str(args.book)
-            for line in catalog:
-                if line == book_number + '.txt' or line == book_number + '-0.txt':
-                    book_name = line
-                    break
-
-            if book_name is None:
-                logger('error', 'book not found - ' + book_number)
-                sys.exit(1)
-
-        else:
+        if args.book is None:
             random.seed(a=time.time())
             book_name = catalog[random.randint(0, len(catalog) - 1)]
             match = book_number_regex.search(book_name)
